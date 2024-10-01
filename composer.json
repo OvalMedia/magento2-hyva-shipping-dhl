@@ -1,0 +1,30 @@
+{
+  "name": "hyva-themes/magento2-hyva-shipping-dhl",
+  "description": "Hyvä Compatibility module for Hyva_ShippingDhl",
+  "type": "magento2-module",
+  "require": {
+    "magento/framework": "*",
+    "hyva-themes/magento2-compat-module-fallback": "*",
+    "magewirephp/magewire": "*",
+    "netresearch/module-shipping-ui": "*"
+  },
+  "authors": [
+    {
+      "name": "Christoph Hendreich",
+      "email": "info@in-session.de"
+    },
+    {
+      "name": "Ole Hornauer",
+      "email": "oh@oval-media.de"
+    }
+  ],
+  "license": "see LICENSE.md",
+  "autoload": {
+    "files": [
+      "src/registration.php"
+    ],
+    "psr-4": {
+      "Hyva\\HyvaShippingDhl\\": "src/"
+    }
+  }
+}

@@ -1,0 +1,134 @@
+<?php 
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Hyva\NetresearchShippingUi\Magewire\ParcelPackstation;
+use Hyva\Theme\ViewModel\HeroiconsOutline;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var ParcelPackstation $magewire */
+
+/** @var HeroiconsOutline heroicons */
+$heroicons = $viewModels->require(HeroiconsOutline::class);
+?>
+<div class="text-xl">
+    <div class="flex flex-row items-start">
+        <label for="parcelPackstationCheck" class="inline-flex items-start gap-x-4">
+            <input type="checkbox" 
+                   wire:model="parcelPackstationCheck" 
+                   id="parcelPackstationCheck"
+                   class="mt-2"
+                   <?php /*?>x-model="nrshipping.cachedShippingOptionSelections.dhlpaket.deliveryLocation.enabled"<?php */?>
+                   <?php /*?>@change="updateDeliveryLocation(nrshipping.cachedShippingOptionSelections.dhlpaket.deliveryLocation.enabled, 'enabled')"<?php */?>/>
+            <span class="text-gray-700 font-bold hover:cursor-pointer text-base">
+                <?= $escaper->escapeHtml(__('Deliver to a DHL parcel station, parcel shop or postal outlet')) ?>
+            </span>
+        </label>
+        <div class="flex gap-2 items-center tooltip ml-auto"
+             x-data="{ tooltipVisible: false }"
+             role="tooltip">
+            <div x-on:mouseenter.self="tooltipVisible = true"
+                 x-on:click="tooltipVisible = !tooltipVisible"
+                 x-on:mouseleave.self="tooltipVisible = false"
+                 x-on:click.outside.away="tooltipVisible = false"
+                 class="relative hover:cursor-pointer">
+                <?= $heroicons->questionMarkCircleHtml('w-8 h-8 opacity-75 hover:opacity-100 mt-1 icon') ?>
+                <template x-if="tooltipVisible">
+                    <div class="absolute -right-3 px-3 pt-3 w-80 z-10">
+                        <div class="shadow-lg px-3 py-2 bg-gray-500 relative text-white rounded-md">
+                             <div class="h-3 w-3 bg-gray-500 rotate-45 transform origin-bottom-left absolute right-3 -top-3"></div>
+                             <?= $escaper->escapeHtml(__('Adjust your parcel delivery flexibly to your schedule. Receive your packages while on the go at one of over 28,000 pickup locations in Germany - at a DHL parcel station or post office. Wherever it best suits your needs.')) ?>      
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+    <?php if (!$magewire->checkAndSetShippingAddress() && $magewire->parcelPackstationCheck): ?>
+        <p class="messages pl-8 py-2">
+            <?= $escaper->escapeHtml(__('Please provide your delivery address before selecting a pickup point.')) ?>
+        </p>
+   <?php endif; ?>
+   <?php if ($magewire->checkAndSetShippingAddress()): ?>
+        <div class="pl-8 py-2">
+             <?php if (empty($magewire->deliveryLocation['id']) && $magewire->parcelPackstationCheck): ?>
+                <button class="w-auto btn btn-secondary" 
+                        type="button" 
+                        wire:click="openModalAndActivateCheckbox" 
+                        id="openModal" 
+                        aria-haspopup="dialog">
+                    <span><?= $escaper->escapeHtml(__('Find DHL Pickup Location')) ?></span>
+                </button>
+            <?php endif; ?>
+            <?php if ($magewire->modalOpened): ?>
+                <div>
+                    <?= /* @noEscape */ $block->getChildHtml('dhlpaket_bestway_parcel_packstation_modal') ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($magewire->deliveryLocation) && $magewire->deliveryLocation['enabled']): ?>
+                <div class="flex flex-row items-start mt-3 gap-x-3">
+                    <div>
+                        <button class="cursor-pointer" 
+                                type="button"
+                                wire:click="clearPackstation">
+                            <?= /* @noEscape */ $heroicons->trashHtml('text-postnl-gray-darker', 20, 20) ?>
+                        </button>
+                    </div>
+                    <div class="flex-grow">
+                        <input type="hidden" name="delivery_location[company]" value="<?= $magewire->deliveryLocation['company']; ?>">
+                        <input type="hidden" name="delivery_location[countryCode]" value="<?= $magewire->deliveryLocation['countryCode']; ?>">
+                        <input type="hidden" name="delivery_location[enabled]" value="<?= $magewire->deliveryLocation['enabled']; ?>">                        
+                        <input type="hidden" name="delivery_location[id]" value="<?= $magewire->deliveryLocation['id']; ?>">
+                        <input type="hidden" name="delivery_location[number]" value="<?= $magewire->deliveryLocation['number']; ?>">                        
+                        <input type="hidden" name="delivery_location[postalCode]" value="<?= $magewire->deliveryLocation['postalCode']; ?>">
+                        <input type="hidden" name="delivery_location[city]" value="<?= $magewire->deliveryLocation['city']; ?>">                        
+                        <input type="hidden" name="delivery_location[street]" value="<?= $magewire->deliveryLocation['street']; ?>">                        
+                        <input type="hidden" name="delivery_location[type]" value="<?= $magewire->deliveryLocation['type']; ?>">
+                        
+                        <h3 class="font-bold">Delivery Location</h3>
+                        <p><?= $magewire->deliveryLocation['displayName']; ?></p>
+                        <p><?= $magewire->deliveryLocation['company']; ?></p>
+                        <p><?= $magewire->deliveryLocation['street']; ?></p>
+                        <p>
+                            <span><?= $magewire->deliveryLocation['postalCode'] . ''; ?></span>
+                            <span><?= $magewire->deliveryLocation['city']; ?></span>
+                        </p>
+                        <div class="my-3 flex flex-col items-start gap-3 justify-start">
+                            <div class="flex flex-row ml-0 gap-3">
+                                <label class="sr-only label" for="customerPostnumber">
+                                    <?= $escaper->escapeHtml(__('DHL Post Number' . ': ')) ?>
+                                </label>
+                                <input name="customerPostnumber"
+                                       value="<?= $magewire->deliveryLocation['customerPostnumber']; ?>"
+                                       pattern=".{6,}"
+                                       min="6" 
+                                       max="10"
+                                       type="text" 
+                                       <?php if ($magewire->deliveryLocation['type'] == 'locker'): ?>
+                                       required
+                                       data-validate='{"min": 6, "max": 10, "required": true}'
+                                       <?php endif; ?>
+                                       id="customerPostnumber" 
+                                       class="form-input inline-flex w-full"                                       
+                                       placeholder="<?= $escaper->escapeHtmlAttr(__('DHL Post Number')) ?>" 
+                                       aria-describedby="<?= $escaper->escapeHtmlAttr(__('DHL Post Number')) ?>"
+                                       title="<?= $escaper->escapeHtmlAttr(__('Please enter more than or equal to 6 characters')) ?>"
+                                       wire:model.defer="deliveryLocation.customerPostnumber"
+                                       wire:change="postnumberChanged($event.target.value)"
+                                       <?php /*?>x-model="nrshipping.cachedShippingOptionSelections.dhlpaket.deliveryLocation.postnumber"<?php */?>
+                                       @change="updateDeliveryLocation(nrshipping.cachedShippingOptionSelections.dhlpaket.deliveryLocation.postnumber, 'postnumber')">
+                            </div>                            
+                        </div>
+                        <p class="text-base">
+                            <?= $escaper->escapeHtml(__('You must enter your DHL post number when sending it to a DHL parcel station. For DHL postal outlet or parcel shop delivery, the DHL post number is optional.')) ?>  
+                        </p>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+</div>

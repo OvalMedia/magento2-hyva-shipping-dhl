@@ -1,0 +1,317 @@
+<?php 
+
+declare(strict_types=1);
+
+/** @var \Magento\Framework\Escaper $escaper */
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \Hyva\NetresearchShippingUi\Magewire\ParcelPackstationModal $magewire */
+/** @var \Hyva\Theme\Model\ViewModelRegistry $viewModels */
+
+/** @var \Hyva\Theme\ViewModel\HeroiconsOutline $heroIcons */
+$heroIcons = $viewModels->require(\Hyva\Theme\ViewModel\HeroiconsOutline::class);
+?>
+<div class="relative z-[1000]">    
+    <?php if ($magewire->isModelOpen()): ?>
+        <div class="fixed inset-0 bg-black/30 transition-opacity"></div>
+        <div class="fixed h-screen w-screen inset-0 z-[1000] overflow-y-auto p-10 m-auto aspect-video md:max-w-[60%]">
+            <div class="flex flex-col min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0 w-full h-full bg-white shadow-xl rounded-md relative"
+                 x-data="mapdata">
+                
+                <button class="cursor-pointer absolute right-0 top-0 p-6" wire:click="closeModal" type="button">
+                    <?= /* @noEscape */ $heroIcons->xHtml('text-postnl-gray-darker', 20, 20) ?>
+                </button>
+                
+                <form wire:submit.prevent="updateApiRequest"
+                      class="flex flex-col md:flex-row gap-3 pt-4">
+                    <input type="text" wire:model.defer="shippingAddress.street"/>
+                    <input type="text" wire:model.defer="shippingAddress.postal_code"/>
+                    <input type="text" wire:model.defer="shippingAddress.city"/>
+                    <button type="button" class="btn btn-primary text-center float-right">
+                        <?= $escaper->escapeHtml(__('Search')) ?>
+                    </button>
+                </form>
+                
+                <div id="mapdata"
+                     @keydown.escape.window="$wire.closeModal()"
+                     class="relative w-full h-full transform overflow-hidden rounded-lg bg-white p-4 pt-5 text-left">
+                    
+                    <div class="flex flex-col gap-y-2 z-10 absolute top-6 right-4" id="layer-control">
+                        <label for="postoffice-checkbox" class="flex flex-row bg-white items-center gap-x-2 px-2">
+                            <input type="checkbox" id="postoffice-checkbox" x-model="showPostoffice" @change="toggleLayer('postoffice')">
+                            <img src="<?= $block->getViewFileUrl('Dhl_Paket::images/icon-postoffice.png'); ?>" alt="Postoffice">
+                        </label>
+                        <label for="locker-checkbox" class="flex flex-row bg-white items-center gap-x-2 px-2">
+                            <input type="checkbox" id="locker-checkbox" x-model="showLocker" @change="toggleLayer('locker')">
+                            <img src="<?= $block->getViewFileUrl('Dhl_Paket::images/icon-packstation.png'); ?>" alt="Locker">
+                        </label>
+                        <label for="servicepoint-checkbox" class="flex flex-row bg-white items-center gap-x-2 px-2">
+                            <input type="checkbox" id="servicepoint-checkbox" x-model="showServicepoint" @change="toggleLayer('servicepoint')">
+                            <img src="<?= $block->getViewFileUrl('Dhl_Paket::images/icon-parcelshop.png'); ?>" alt="Servicepoint">
+                        </label>
+                    </div>
+                    
+                    <div x-show="isLoading" class="loader"><?= $escaper->escapeHtml(__('Loading...')) ?></div>
+                    <div x-data="initMap()" class="h-full w-full z-0" id="map" wire:ignore></div>
+                
+                    <template x-if="showParcelShops">
+                        <div class="relative z-100 absolute right-0 top-0 bottom-0 left-0 m-4 mt-5"
+                             x-show="showParcelShops">
+                            <div class="relative w-screen md:max-w-md shadow-2xl flex flex-col justify-start items-start gap-6 md:p-6 bg-white ml-auto h-full z-10"
+                                 x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700"
+                                 x-transition:enter-start="translate-x-full"
+                                 x-transition:enter-end="translate-x-0"
+                                 x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700"
+                                 x-transition:leave-start="translate-x-0"
+                                 x-transition:leave-end="translate-x-full">
+                                <button type="button" @click="showParcelShops = false">
+                                    <?= /* @noEscape */ $heroIcons->xHtml('text-postnl-gray-darker', 20, 20) ?>
+                                </button>
+                                <div>
+                                    <p class="font-bold mb-3" x-text="locations[currentDetailIndex].display_name"></p>
+                                    <p class="semi-bold"><?= $escaper->escapeHtml(__('Address' . ': ')) ?></p>
+                                    <p x-text="locations[currentDetailIndex].address.company"></p>
+                                    <p x-text="locations[currentDetailIndex].address.street"></p>
+                                    <p x-text="locations[currentDetailIndex].address.postal_code + ' ' + locations[currentDetailIndex].address.city"></p>
+                                </div>
+                                <template x-if="locations[currentDetailIndex].opening_hours">
+                                    <div>
+                                        <p class="semi-bold"><?= $escaper->escapeHtml(__('Opening hours' . ': ')) ?></p>
+                                        <template x-for="opening_hour in locations[currentDetailIndex].opening_hours" :key="opening_hour.day_of_week">
+                                            <div class="flex flex-row gap-x-3">
+                                                <span class="w-10" x-text="opening_hour.day_of_week"></span>
+                                                <template x-for="time_frame in opening_hour.time_frames" :key="time_frame.opens + time_frame.closes">
+                                                    <span x-text="time_frame.opens + ' - ' + time_frame.closes"></span>
+                                                </template>                                                    
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="locations[currentDetailIndex].services">
+                                    <div>
+                                        <p class="semi-bold"><?= $escaper->escapeHtml(__('Services' . ': ')) ?></p>
+                                        <ul>
+                                            <template x-for="service in locations[currentDetailIndex].services" :key="service">
+                                                <li>
+                                                    <span x-text="service" 
+                                                          class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                                    </span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>    
+                                </template>
+                            </div>
+                            <div class="w-full h-full bg-black/30 z-0 absolute top-0" @click="showParcelShops = false"></div>
+                        </div>
+                    </template>
+                </div>    
+                <script>                    
+                    Alpine.data('mapdata', () => ({
+                        map: null,
+                        postoffice: null,
+                        locker: null,
+                        servicepoint: null,
+                        showMap: false,
+                        showPostoffice: true,
+                        showLocker: true,
+                        showServicepoint: true,
+                        showParcelShops: false,
+                        currentDetailIndex: null,
+                        isLoading: false,
+                        loadfiles: false,
+                        locations: JSON.parse('<?= json_encode($magewire->apiData); ?>'),
+                        apiToken: '<?= $magewire->mapboxApi ?>',
+                        init() {
+                            if (!this.loadfiles) {
+                                this.loadJsCss().then(() => {
+                                    this.loadfiles = true;
+                                    this.initMap();
+                                });
+                            }
+                            window.addEventListener('loadingStart', () => {
+                                this.isLoading = true;
+                            });
+                            window.addEventListener('loadingEnd', () => {
+                                this.locations = this.$wire.get('apiData');
+                                this.updateMarkers();
+                                this.isLoading = false;
+                            });
+                            this.showMap = true;
+                            this.toggleDivsClass(this.showMap);
+                        },
+
+                        loadJsCss() {
+                            return new Promise(resolve => {
+                                const script = document.createElement('script');
+                                script.type = 'text/javascript';
+                                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+                                script.async = true;
+                                script.onload = () => {
+                                    const link = document.createElement('link');
+                                    link.rel = 'stylesheet';
+                                    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+                                    link.onload = resolve;
+                                    document.head.appendChild(link);
+                                };
+                                document.head.appendChild(script);
+                            });
+                        },
+
+                        initMap() {
+                            if (this.loadfiles) {
+                                if (!this.map) {
+                                    this.map = L.map('map');
+                                    this.postoffice = L.layerGroup();
+                                    this.locker = L.layerGroup();
+                                    this.servicepoint = L.layerGroup();
+                                    
+                                    const overlays = {
+                                        'postoffice': this.postoffice,
+                                        'locker': this.locker,
+                                        'servicepoint': this.servicepoint
+                                    };
+
+                                    //const layerControl = L.control.layers(overlays).addTo(this.map);
+                                    
+                                    const attribution = `© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <strong><a href="https://www.mapbox.com/map-feedback/" target="_blank">Improve this map</a></strong>`;
+                                    L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+                                        maxZoom: 18,
+                                        id: 'mapbox/streets-v11',
+                                        tileSize: 512,
+                                        zoomOffset: -1,
+                                        accessToken: this.apiToken,
+                                        attribution: attribution
+                                    }).addTo(this.map);
+                                }
+                                if (this.locations && this.locations.length > 0) {
+                                    this.setLocations(this.locations);
+                                    this.initLayerVisibility();
+                                }
+                            }    
+                        },
+
+                        setLocations(locations) {
+                            if (locations && locations.length > 0) {
+                                
+                                const firstLocation = locations[0];
+                                this.map.setView([firstLocation.latitude, firstLocation.longitude], 15);
+                                
+                                
+                                locations.forEach((location, index) => {
+                                                                        
+                                    const customIcon = L.icon({
+                                        iconUrl: location.icon,
+                                        iconSize: [55, 55],
+                                        iconAnchor: [25, 25],
+                                        popupAnchor: [1, -34],
+                                        className: location.shop_type,
+                                    });
+                                    
+                                    let marker = L.marker([location.latitude, location.longitude], { icon: customIcon });
+        
+                                    if (location.shop_type === 'postoffice') {
+                                        this.postoffice.addLayer(marker);
+                                    } else if (location.shop_type === 'locker') {
+                                        this.locker.addLayer(marker);
+                                    } else if (location.shop_type === 'servicepoint') {
+                                        this.servicepoint.addLayer(marker);
+                                    }
+                                
+                                    marker.bindPopup(`
+                                        <div class="flex flex-col">
+                                            <span class="font-bold pb-2">${location.display_name}</span>
+                                            <span class="font-bold">${location.address.company}</span>
+                                            <span>${location.address.street}</span>
+                                            <span>${location.address.postal_code} ${location.address.city}</span>
+                                            <div class="flex flex-row gap-x-2 pt-2">
+                                                <button type="button" class="auto btn btn-primary" @click="setParcelShops({value: ${location.shop_number}})"><?= $escaper->escapeHtml(__('Select')) ?></button>
+                                                <button type="button" class="text-base" @click="showParcelShopDetail(${index})"><?= /* @noEscape */ $heroIcons->informationCircleHtml('information-circle', 20, 20) ?></button>
+                                            </div>
+                                        </div>
+                                    `);
+                                });
+                            }
+                        },
+                        updateMarkers() {
+                            if (this.map) {
+                                this.map.eachLayer(layer => {
+                                    if (layer instanceof L.Marker) {
+                                        this.map.removeLayer(layer);
+                                    }
+                                });
+                            }
+                            this.setLocations(this.locations);
+                        },
+                        setParcelShops(dataToSend) {
+                            window.Livewire.emit('parcel_packstation_saved', dataToSend);
+                        },
+                        initLayerVisibility() {
+                            if (this.showPostoffice) {
+                                this.map.addLayer(this.postoffice);
+                            }
+                            if (this.showLocker) {
+                                this.map.addLayer(this.locker);
+                            }
+                            if (this.showServicepoint) {
+                                this.map.addLayer(this.servicepoint);
+                            }
+                        },
+                        toggleLayer(layerType) {
+                            switch(layerType) {
+                                case 'postoffice':
+                                    this.showPostoffice ? this.map.addLayer(this.postoffice) : this.map.removeLayer(this.postoffice);
+                                    break;
+                                case 'locker':
+                                    this.showLocker ? this.map.addLayer(this.locker) : this.map.removeLayer(this.locker);
+                                    break;
+                                case 'servicepoint':
+                                    this.showServicepoint ? this.map.addLayer(this.servicepoint) : this.map.removeLayer(this.servicepoint);
+                                    break;
+                            }
+                            this.centerToNextLocation();
+                        },
+                        centerToNextLocation() {
+                            const visibleLocation = this.locations.find(location => {
+                                return (this.showPostoffice && location.shop_type === 'postoffice') ||
+                                       (this.showLocker && location.shop_type === 'locker') ||
+                                       (this.showServicepoint && location.shop_type === 'servicepoint');
+                            });
+                            if (visibleLocation) {
+                                this.map.setView([visibleLocation.latitude, visibleLocation.longitude]);
+                            }
+                        },
+                        showParcelShopDetail(index) {
+                            if (this.currentDetailIndex === index) {
+                                this.showParcelShops = !this.showParcelShops;
+                            } else {
+                                this.currentDetailIndex = index;
+                                this.showParcelShops = true;
+                                this.map.setView([this.locations[this.currentDetailIndex].latitude, this.locations[this.currentDetailIndex].longitude]);
+                            }
+                        },
+                        updateMap() {
+                            this.showMap = true;
+                        },
+                        toggleDivsClass(showMap) {
+                            //fixed for elements that are inside the body.
+                            const children = document.body.children;
+                            for (let child of children) {
+                                if (child.tagName === 'DIV' && !child.classList.contains('page-wrapper')) {
+                                    child.classList.toggle('!z-0', showMap);
+                                    if (showMap) {
+                                        child.setAttribute('aria-hidden', 'true');
+                                    } else {
+                                        child.removeAttribute('aria-hidden');
+                                    }
+                                }
+                            }
+                        },
+                        errorHandler(message) {
+                            console.error(message);
+                        }
+                    }));
+                </script>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>

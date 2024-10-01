@@ -1,0 +1,44 @@
+<?php 
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Hyva\HyvaShippingDhl\Magewire\DeliveryOptions;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var DeliveryOptions $magewire */
+?>
+<div class="nrshipping-settings-container p-6 border-solid border-2 border-[#FFCC00] mt-6 flex flex-col gap-y-1"
+
+     <?php /*?>@private-content-loaded.window="getSectionData($event.detail.data);"
+     x-data="bestwayLoader()"<?php */?>
+     @shipping-country_id.window="Magewire.emitTo('checkout.shipping.method.dhlpaket_bestway', 'refresh');">
+
+    <img class="max-w-40 mb-4" src="<?= $block->getViewFileUrl("Hyva_HyvaShippingDhl::svg/Logo.svg"); ?>" alt="DHL" />
+
+    <h3 class="text-xl font-bold"><?= $escaper->escapeHtml(__('DHL Preferred Delivery. Delivered just the way you want.')) ?></h3>
+    <p><?= $escaper->escapeHtml(__('You decide when and where you want to receive your parcels with the recipient services of DHL.')) ?></p>
+    <p><?= $escaper->escapeHtml(__('Please choose your preferred delivery options.')) ?></p>
+
+    <form x-data="dhlShipping()">
+        <?= /* @noEscape */ $block->getChildHtml('dhlpaket_bestway_parcel_announcement'); ?>
+        <?php if ($magewire->isShippingAddressValid()): ?>
+            <?= /* @noEscape */ $block->getChildHtml('dhlpaket_bestway_preferred_day'); ?>
+            <?= /* @noEscape */ $block->getChildHtml('dhlpaket_bestway_parcel_packstation'); ?>
+            <?= /* @noEscape */ $block->getChildHtml('dhlpaket_preferred_location'); ?>
+            <?= /* @noEscape */ $block->getChildHtml('dhlpaket_preferred_neighbor'); ?>
+            <?= /* @noEscape */ $block->getChildHtml('dhlpaket_no_neighbor'); ?>
+        <?php endif ?>
+    </form>
+
+    <script>
+        function dhlShipping() {
+            return {
+
+            }
+        }
+    </script>
+</div>
+

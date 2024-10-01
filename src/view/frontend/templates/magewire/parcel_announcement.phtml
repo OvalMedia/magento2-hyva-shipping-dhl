@@ -1,0 +1,30 @@
+<?php 
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Hyva\HyvaShippingDhl\Magewire\CheckoutOptions;
+use Hyva\HyvaShippingDhl\ViewModel\Tooltip;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var CheckoutOptions $magewire */
+/** @var Tooltip $tooltip */
+$tooltip = $viewModels->require(Tooltip::class);
+?>
+<div class="mb-6">
+    <h4 class="font-bold my-3"><?= $escaper->escapeHtml(__('Parcel Announcement')) ?></h4>
+    <div class="flex md:items-center">
+        <div class="flex">
+            <input id="parcelAnnouncement" class="field checkbox w-4 h-4 renderer-checkbox cursor-pointer" type="checkbox" wire:model="parcelAnnouncement" />
+        </div>
+        <label class="mb-0 ml-4" for="parcelAnnouncement">
+            <span class="hover:cursor-pointer text-base">
+                <?= $escaper->escapeHtml(__('Enable DHL parcel notification')) ?>
+            </span>
+        </label>
+
+        <?= $tooltip->render(__('Your e-mail address will be sent to DHL upon enabling, after which DHL will trigger a package announcement for your shipment. The e-mail address will exclusively be used for the announcement of this shipment.')) ?>
+    </div>
+</div>

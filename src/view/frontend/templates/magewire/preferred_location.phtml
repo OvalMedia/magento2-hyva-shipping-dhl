@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Hyva\HyvaShippingDhl\Magewire\CheckoutOptions;
+use Hyva\HyvaShippingDhl\ViewModel\Tooltip;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var PreferredLocation $magewire */
+/** @var Tooltip $tooltip */
+$tooltip = $viewModels->require(Tooltip::class);
+?>
+<div class="mb-6">
+    <label for="preferred_location" class="my-3 font-bold hover:cursor-pointer">
+        <span>
+            <?= $escaper->escapeHtml(__('Drop-off Location: Delivery to your preferred drop-off location')) ?>
+        </span>
+    </label>
+
+    <div class="flex items-start text-xl flex flex-row items-center gap-x-4">
+        <input wire:model.lazy="preferredLocation"
+               wire:init="init"
+               x-data="{ disabled: $wire.entangle('disabled') }"
+               type="text"
+               id="preferred_location"
+               class="w-full"
+               :class="disabled ? 'disabled:opacity-50' : ''"
+               placeholder="<?= $escaper->escapeHtmlAttr(__('E.g. garage, terrace'))?>"
+               x-bind:disabled="disabled"
+        />
+
+        <?= $tooltip->render(__('Choose a weather-protected and non-visible place on your property where we can deposit the parcel in your absence.')) ?>
+    </div>
+</div>

@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Hyva\HyvaShippingDhl\Magewire\CheckoutOptions;
+use Hyva\HyvaShippingDhl\ViewModel\Tooltip;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var PreferredNeighbor $magewire */
+/** @var Tooltip $tooltip */
+$tooltip = $viewModels->require(Tooltip::class);
+?>
+<div class="mb-6">
+    <h4 class="font-bold my-3"><?= $escaper->escapeHtml(__('Preferred Neighbor: Delivery to a neighbor of your choice')) ?></h4>
+
+    <div class="flex">
+        <div class="w-full" wire:init="init" x-data="{ disabled: $wire.entangle('disabled') }">
+            <div class="mb-4">
+                <label for="preferred_neighbor_name" class="font-bold text-base hover:cursor-pointer">
+                    <span>
+                        <?= $escaper->escapeHtml(__('Neighbor name')) ?>
+                    </span>
+                </label>
+
+                <div class="flex items-start text-xl flex flex-row items-center gap-x-4">
+                    <input wire:model.lazy="preferredNeighborName"
+                           type="text"
+                           id="preferred_neighbor_name"
+                           class="w-full"
+                           :class="disabled ? 'disabled:opacity-50' : ''"
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('First name, last name of neighbor'))?>"
+                           x-bind:disabled="disabled"
+                    />
+                </div>
+            </div>
+
+            <div class="my-4">
+                <label for="preferred_neighbor_address" class="font-bold text-base hover:cursor-pointer">
+                    <span>
+                        <?= $escaper->escapeHtml(__('Neighbor address')) ?>
+                    </span>
+                </label>
+
+                <div class="flex items-start text-xl flex flex-row items-center gap-x-4">
+                    <input wire:model.lazy="preferredNeighborAddress"
+                           id="preferred_neighbor_address"
+                           class="w-full"
+                           :class="disabled ? 'disabled:opacity-50' : ''"
+                           type="text"
+                           placeholder="<?= $escaper->escapeHtmlAttr(__('Street, number, postal code, city'))?>"
+                           x-bind:disabled="disabled"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <?= $tooltip->render(__('Declare a person in your immediate neighborhood whom we can hand out your parcel. This person should live in the same building, directly opposite or next door.')) ?>
+    </div>
+</div>

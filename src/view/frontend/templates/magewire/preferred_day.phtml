@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Hyva\HyvaShippingDhl\Magewire\CheckoutOptions;
+use Hyva\HyvaShippingDhl\ViewModel\Tooltip;
+
+/** @var Escaper $escaper */
+/** @var Template $block */
+/** @var PreferredDay $magewire */
+/** @var Tooltip $tooltip */
+$tooltip = $viewModels->require(Tooltip::class);
+?>
+<div class="mb-6">
+    <label for="preferred_day" class="my-3 font-bold hover:cursor-pointer">
+        <span>
+            <?= $escaper->escapeHtml(__('Delivery Day: Delivery on your preferred day')) ?>
+        </span>
+    </label>
+
+    <div class="flex items-start text-xl flex flex-row items-center gap-x-4">
+
+
+        <?= $tooltip->render(__('Choose one of the displayed days for your parcel delivery. Other days are not possible due to delivery processes.')) ?>
+    </div>
+</div>
