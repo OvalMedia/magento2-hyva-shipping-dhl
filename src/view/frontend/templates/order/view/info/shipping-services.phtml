@@ -1,0 +1,46 @@
+<?php
+
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \Netresearch\ShippingUi\ViewModel\Order\Info\DeliveryLocation $locationViewModel */
+/** @var \Netresearch\ShippingUi\ViewModel\Order\Info\ServiceSelection $selectionViewModel */
+$locationViewModel = $block->getData('locationViewModel');
+$selectionViewModel = $block->getData('selectionViewModel');
+
+$orderId = $selectionViewModel->getOrder()->getId();
+
+$services = $selectionViewModel->getValues($orderId);
+$deliveryAddressLines = $locationViewModel->getAddressLines($orderId);
+?>
+<?php if (!empty($services)): ?>
+    <section class="nrshipping-selected-services border border-[#FFCC00]">
+        <div class="section-title bg-[#FFCC00] p-4 font-bold">
+            <span class="title"><?= $escaper->escapeHtml(__('Shipping Services')) ?></span>
+        </div>
+        <div class="section-content">
+            <div class="section-item">
+                <table class="data-table table-auto w-full">
+                    <tbody>
+                    <?php foreach ($services as $idx => $service): ?>
+                        <tr class="col-<?= /* @noEscape */ (int) $idx ?>">
+                            <td class="label px-4 py-2 font-bold"><?= $escaper->escapeHtml($service['label']) ?></td>
+                            <td class="text-center px-4 py-2"><?= $escaper->escapeHtml($service['value']) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+
+                    <?php if (!empty($deliveryAddressLines)): ?>
+                        <tr>
+                            <th><?= $escaper->escapeHtml(__('Location Address')) ?></th>
+                            <td>
+                                <?php foreach ($deliveryAddressLines as $addressLine): ?>
+                                    <div><?= $escaper->escapeHtml($addressLine) ?></div>
+                                <?php endforeach; ?>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+<?php endif; ?>
