@@ -18,7 +18,7 @@
       "email": "oh@oval-media.de"
     }
   ],
-  "license": "see LICENSE.md",
+  "license": "MIT",
   "autoload": {
     "files": [
       "src/registration.php"
