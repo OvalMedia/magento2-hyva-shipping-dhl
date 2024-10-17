@@ -1,5 +1,5 @@
 {
-  "name": "hyva-themes/magento2-hyva-shipping-dhl",
+  "name": "ovalmedia/magento2-hyva-shipping-dhl",
   "description": "Hyvä Compatibility module for Hyva_ShippingDhl",
   "type": "magento2-module",
   "require": {
